@@ -23,18 +23,17 @@ CLIENT_SECRET_FILE = 'client_secret.json'
 APPLICATION_NAME = 'Drive API Python Quickstart'
 
 
+class FileOnDriveError(Exception):
+    pass
+
 def getFileIdFromName(service, file_name):
     results = service.files().list().execute()
     items = results.get('items', [])
-    if not items:
-        print('No files found.')
-    else:
-        print('Files:')
-        for item in items:
-            print item['title']
-            if item['title'] == file_name:
-                print item['id']
-                return item['id']
+    for item in items:
+        print(item['title'])
+        if item['title'] == file_name:
+            return item['id']
+    raise FileOnDriveError("File %s was not found on Google Drive"%file_name)
 
 
 def updateFile(service, file_id, filename, new_title=None, new_description=None, new_mime_type=None, new_revision=True):
@@ -74,8 +73,9 @@ def updateFile(service, file_id, filename, new_title=None, new_description=None,
             newRevision=new_revision,
             media_body=media_body).execute()
         return updated_file
-    except errors.HttpError, error:
-        print 'An error occurred: %s' % error
+    except errors.HttpError:
+        print('An error occurred.')
+        raise
         return None
 
 
@@ -93,7 +93,10 @@ def insertFile(service, filename, title=None, description='', parent_id=[]):
       Inserted file metadata if successful, None otherwise.
     """
     mime_type = '*/*'
-    media_body = MediaFileUpload(filename, mimetype=mime_type, resumable=True)
+    try:
+        media_body = MediaFileUpload(filename, mimetype=mime_type, resumable=True)
+    except Exception as e:
+        raise
     if title is None:
         title = filename
     body = {
@@ -111,11 +114,12 @@ def insertFile(service, filename, title=None, description='', parent_id=[]):
             media_body=media_body).execute()
 
         # Uncomment the following line to print the File ID
-        print 'File ID: %s' % file['id']
+        # print('File ID: %s' % file['id'])
 
         return file
-    except errors.HttpError, error:
-        print 'An error occured: %s' % error
+    except errors.HttpError as e:
+        print('An error occured.',e)
+        raise
         return None
 
 
@@ -138,13 +142,17 @@ def getCredentials():
     store = oauth2client.file.Storage(credential_path)
     credentials = store.get()
     if not credentials or credentials.invalid:
-        flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES)
+        try:
+            flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES)
+        except oauth2client.clientsecrets.InvalidClientSecretsError:
+            raise oauth2client.clientsecrets.InvalidClientSecretsError("The client secret file couldn't be found. Go to: https://developers.google.com/drive/v3/web/quickstart/python")
+            
         flow.user_agent = APPLICATION_NAME
         if flags:
             credentials = tools.run_flow(flow, store, flags)
         else:  # Needed only for compatibility with Python 2.6
             credentials = tools.run(flow, store)
-        print 'Storing credentials to ' + credential_path
+        print('Storing credentials to ' + credential_path)
     return credentials
 
 
@@ -155,12 +163,9 @@ def uploadFileToDrive(filename, drive_filename=None, description='', parents=[],
     credentials = getCredentials()
     http = credentials.authorize(httplib2.Http())
     service = discovery.build('drive', 'v2', http=http)
-    metadata = insertFile(service, 'dynamip_title', 'TEMP TEMP TEMP dynamic app info', [
-    ], '*/*', 'dynamip_filename')
-    print 'Metadata of', filename, ':\n', metadata
-    if save_metadata:
-        file = open('metadata_of_' + filename, 'w')
-        json.dump(metadata, file)
+    metadata = insertFile(service, filename, 'dynamip_title', 'TEMP TEMP TEMP dynamic app info', [])
+    print('Metadata of', filename, ':\n', metadata)
+    return metadata
 
 
 def printFilesList(service, number_of_results=10):
@@ -173,8 +178,9 @@ def printFilesList(service, number_of_results=10):
         for item in items:
             try:
                 print('{0} ({1})'.format(item['title'], item['id']))
-            except Exception, e:
-                print(e)
+            except Exception:
+                raise
+                # print(e)
 
 
 def getServiceInstant():
@@ -194,7 +200,7 @@ def main():
     # insertFile(service, 'dynamip.conf')
     file_id = getFileIdFromName(service, 'dynamip.conf')
     metadata = updateFile(service, file_id, 'dynamip.conf')
-    print metadata
+    print(metadata)
     file = open('metadata_of_updated_dynamip_file', 'w')
     json.dump(metadata, file)
     # file.write(file)
