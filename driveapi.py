@@ -26,14 +26,15 @@ APPLICATION_NAME = 'Drive API Python Quickstart'
 class FileOnDriveError(Exception):
     pass
 
+
 def getFileIdFromName(service, file_name):
     results = service.files().list().execute()
     items = results.get('items', [])
     for item in items:
-        print(item['title'])
+        # print(item['title'])
         if item['title'] == file_name:
             return item['id']
-    raise FileOnDriveError("File %s was not found on Google Drive"%file_name)
+    raise FileOnDriveError("File %s was not found on Google Drive" % file_name)
 
 
 def updateFile(service, file_id, filename, new_title=None, new_description=None, new_mime_type=None, new_revision=True):
@@ -94,7 +95,8 @@ def insertFile(service, filename, title=None, description='', parent_id=[]):
     """
     mime_type = '*/*'
     try:
-        media_body = MediaFileUpload(filename, mimetype=mime_type, resumable=True)
+        media_body = MediaFileUpload(
+            filename, mimetype=mime_type, resumable=True)
     except Exception as e:
         raise
     if title is None:
@@ -118,7 +120,7 @@ def insertFile(service, filename, title=None, description='', parent_id=[]):
 
         return file
     except errors.HttpError as e:
-        print('An error occured.',e)
+        print('An error occured.', e)
         raise
         return None
 
@@ -145,8 +147,9 @@ def getCredentials():
         try:
             flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES)
         except oauth2client.clientsecrets.InvalidClientSecretsError:
-            raise oauth2client.clientsecrets.InvalidClientSecretsError("The client secret file couldn't be found. Go to: https://developers.google.com/drive/v3/web/quickstart/python")
-            
+            raise oauth2client.clientsecrets.InvalidClientSecretsError(
+                "The client secret file couldn't be found. Go to: https://developers.google.com/drive/v3/web/quickstart/python")
+
         flow.user_agent = APPLICATION_NAME
         if flags:
             credentials = tools.run_flow(flow, store, flags)
@@ -163,7 +166,8 @@ def uploadFileToDrive(filename, drive_filename=None, description='', parents=[],
     credentials = getCredentials()
     http = credentials.authorize(httplib2.Http())
     service = discovery.build('drive', 'v2', http=http)
-    metadata = insertFile(service, filename, 'dynamip_title', 'TEMP TEMP TEMP dynamic app info', [])
+    metadata = insertFile(service, filename, 'dynamip_title',
+                          'TEMP TEMP TEMP dynamic app info', [])
     print('Metadata of', filename, ':\n', metadata)
     return metadata
 
@@ -196,13 +200,13 @@ def main():
     Creates a Google Drive API service object and outputs the names and IDs
     for up to 10 files.
     """
-    service = getServiceInstant()
-    # insertFile(service, 'dynamip.conf')
-    file_id = getFileIdFromName(service, 'dynamip.conf')
-    metadata = updateFile(service, file_id, 'dynamip.conf')
-    print(metadata)
-    file = open('metadata_of_updated_dynamip_file', 'w')
-    json.dump(metadata, file)
+    # service = getServiceInstant()
+    # # insertFile(service, 'dynamip.conf')
+    # file_id = getFileIdFromName(service, 'dynamip.conf')
+    # metadata = updateFile(service, file_id, 'dynamip.conf')
+    # print(metadata)
+    # file = open('metadata_of_updated_dynamip_file', 'w')
+    # json.dump(metadata, file)
     # file.write(file)
     # results = service.files().list(maxResults=10).execute()
     # items = results.get('items', [])
