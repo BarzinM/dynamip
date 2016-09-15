@@ -1,11 +1,30 @@
 import json
 import urllib.request as urlreq
 import requests
-from time import sleep,time
+from time import sleep, time
 import sys
+import subprocess
+import socket
+
 
 class DynamipError(Exception):
     pass
+
+
+def getBashOutput(command):
+    process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
+    return process.communicate()[0].decode("utf-8").rstrip()
+
+
+def getSSID():
+    command = "iwgetid -r"
+    return getBashOutput(command)
+
+
+def getLocalIP():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    return s.getsockname()[0]
 
 
 def ipFromIpify():
@@ -35,41 +54,44 @@ def getIP():
         print(sys.exc_info()[0])
     return sys.exc_info()[0]
 
+
 def getHostname():
     import socket
     return socket.gethostname()
 
-def touchOpen(file_name,*args,**kwargs):
+
+def touchOpen(file_name, *args, **kwargs):
     import os
     fd = os.open(file_name, os.O_RDWR | os.O_CREAT)
 
     # Encapsulate the low-level file descriptor in a python file object
     return os.fdopen(fd, *args, **kwargs)
 
-def writeIPToFile(file_name, hostname, ip=None):
-    if ip is None:
-        my_ip = getIP()
-    else:
-        my_ip = ip
+
+def writeIPToFile(file_name, hostname):
+    
+    ip_current_public = getIP()
+    ip_current_local = getLocalIP()
+
     with touchOpen(file_name, 'r+') as file:
         try:
             whole_data = json.load(file)
-            print(whole_data)
         except ValueError:
-            whole_data=dict()
-            print("couldn't read")
-        info = {'ip': my_ip,'mtime':time()}
-        whole_data[hostname]=info
-        print(whole_data)
+            whole_data = dict()
+        info = {'ip_public': ip_current_public,'ip_local':ip_current_local, 'ssid':getSSID(), 'mtime': time()}
+        whole_data[hostname] = info
         file.seek(0)
         json.dump(whole_data, file)
         file.truncate()
 
 
-def readIPFromFile(file_name,hostname):
+def readIPFromFile(file_name, hostname):
     with open(file_name, 'r') as ip_file:
-        saved_ip = json.load(ip_file)[hostname]['ip']
-    return saved_ip
+        info = json.load(ip_file)[hostname]
+        ip_public = info['ip_public']
+        ip_local = info['ip_local']
+    return ip_public, ip_local
+
 
 def getChangedIP(minutes=15):
     my_ip = getIP()
@@ -86,3 +108,4 @@ def getChangedIP(minutes=15):
 
 if __name__ == '__main__':
     print(getHostname())
+    print(getSSID(), getLocalIP())

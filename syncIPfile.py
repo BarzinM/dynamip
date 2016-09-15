@@ -1,51 +1,51 @@
 from driveapi import getFileIdFromName, getServiceInstant, updateFile, FileOnDriveError, insertFile
-from misc import getIP, getChangedIP, writeIPToFile, readIPFromFile, DynamipError, getHostname
+from misc import getIP, getChangedIP, writeIPToFile, readIPFromFile, DynamipError, getHostname, getLocalIP, getHostname
 from json import dump, load
 
 
 def main():
     """TODOS"""
-    file_name = 'dynamip.txt'
+    file_name = 'Dynamip'
 
     hostname = getHostname()
-    ip = getIP()
+    ip_public_current = getIP()
+    ip_local_current = getLocalIP()
     service = getServiceInstant()
 
     # check see if file is online
-
     try:
-        saved_ip = readIPFromFile(file_name, hostname)
-        if ip != saved_ip:
-            print('Old IP was', saved_ip,'and current one is',ip)
-            writeIPToFile(file_name, hostname)
-    except (KeyError,ValueError) as e:
-        print(e)
-        writeIPToFile(file_name,hostname,ip)
-    except FileNotFoundError:
-        try:
-            file_id = getFileIdFromName(service, file_name)
-        except FileOnDriveError:
-            writeIPToFile(file_name,hostname,ip)
-        # Download file
-        # writeIPToFile(file_name, hostname,ip)
-        # saved_ip = ip
-        # print("Could not get the old IP from %s. Uploading the new IP to the file."%ip)
-
-
-    try:
+        print("Finding file on google Drive ...")
         file_id = getFileIdFromName(service, file_name)
-        print("%s file found on Google Drive with ID %s"%(file_name,file_id))
+        # download it
+        # download .........
+        ip_public_saved = readIPFromFile(file_name, hostname)
+        print("Done")
     except FileOnDriveError:
-        print("File %s could not be located on the drive. Creating ..."%file_name)
+        print("File could not be located on Google Drive.")
+        # check see if it exists locally
+        try:
+            print("Looking for the file on disk ...")
+            ip_public_saved, ip_local_saved = readIPFromFile(
+                file_name, hostname)
+            print("Found it.")
+            if ip_public_current != ip_public_saved or ip_local_current != ip_local_saved:
+                print('Old IP was', ip_public_saved,
+                      'and current one is', ip_public_current)
+                writeIPToFile(file_name, hostname)
+        except (FileNotFoundError, KeyError) as e:
+            print(e)
+            print("Generating the file ...")
+            writeIPToFile(file_name, hostname)
+            print("Done.")
+            ip_public_saved = ip_public_current
+            ip_local_saved = ip_local_current
+        print("Uploading the file to Google Drive ...")
         file_metadata = insertFile(service, file_name)
         file_id = file_metadata['id']
-        print("%s has been created with the id %s"%(file_name,file_id))
+        print("%s has been uploaded with the id %s" % (file_name, file_id))
 
-    #     metadata = updateFile(service, file_id, file_name)
-    #     print(metadata)
-    #     dump(metadata, file)
     # while True:
-    #     ip = getChangedIP(.3)
+    #     ip_public_current = getChangedIP(.3)
     #     writeIPToFile(file_name)
     #     metadata = updateFile(service, file_id, file_name)
     #     print(metadata)
