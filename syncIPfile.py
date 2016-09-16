@@ -20,6 +20,13 @@ def main():
         # download .........
         ip_public_saved = readIPFromFile(file_name, hostname)
         print("Done")
+    except KeyError as e:
+        print("An attribute could not be found in %s file: %s" % (file_name, e))
+        print("Generating the file ...")
+        writeIPToFile(file_name, hostname)
+        print("Done.")
+        ip_public_saved = ip_public_current
+        ip_local_saved = ip_local_current
     except FileOnDriveError:
         print("File could not be located on Google Drive.")
         # check see if it exists locally

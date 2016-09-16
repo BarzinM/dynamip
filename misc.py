@@ -78,10 +78,10 @@ def writeIPToFile(file_name, hostname):
             whole_data = json.load(file)
         except ValueError:
             whole_data = dict()
-        info = {'ip_public': ip_current_public,'ip_local':ip_current_local, 'ssid':getSSID(), 'mtime': time()}
+        info = {'ip_public': ip_current_public,'local_networks':ip_current_local, 'ssid':getSSID(), 'mtime': time()}
         whole_data[hostname] = info
         file.seek(0)
-        json.dump(whole_data, file)
+        json.dump(whole_data, file, sort_keys=True, indent=4)
         file.truncate()
 
 
@@ -89,7 +89,7 @@ def readIPFromFile(file_name, hostname):
     with open(file_name, 'r') as ip_file:
         info = json.load(ip_file)[hostname]
         ip_public = info['ip_public']
-        ip_local = info['ip_local']
+        ip_local = info['local_networks']
     return ip_public, ip_local
 
 
