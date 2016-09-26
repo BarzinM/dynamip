@@ -138,13 +138,13 @@ def download_file(service, file_id, local_fd):
   while True:
     try:
       download_progress, done = media_request.next_chunk()
-    except errors.HttpError, error:
-      print 'An error occurred: %s' % error
+    except errors.HttpError as error:
+      print('An error occurred: %s' % error)
       return
     if download_progress:
-      print 'Download Progress: %d%%' % int(download_progress.progress() * 100)
+      print('Download Progress: %d%%' % int(download_progress.progress() * 100))
     if done:
-      print 'Download Complete'
+      print('Download Complete')
       return
 
 def print_file_content(service, file_id):
@@ -158,9 +158,9 @@ def print_file_content(service, file_id):
     File's content if successful, None otherwise.
   """
   try:
-    print service.files().get_media(fileId=file_id).execute()
-  except errors.HttpError, error:
-    print 'An error occurred: %s' % error
+    print(service.files().get_media(fileId=file_id).execute())
+  except errors.HttpError as error:
+    print('An error occurred: %s' % error)
 
 def getCredentials():
     """Gets valid user credentials from storage.
@@ -217,7 +217,7 @@ def downloadFile(file_id):
     done = False
     while done is False:
         status, done = downloader.next_chunk()
-        print "Download %d%%." % int(status.progress() * 100)
+        print("Download %d%%." % int(status.progress() * 100))
 
 
 def printFilesList(service, number_of_results=10):
