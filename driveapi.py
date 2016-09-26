@@ -8,11 +8,11 @@ from oauth2client import tools
 from apiclient import errors
 from apiclient.http import MediaFileUpload, MediaIoBaseDownload
 
-try:
-    import argparse
-    flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
-except ImportError:
-    flags = None
+# try:
+#     import argparse
+#     flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
+# except ImportError:
+#     flags = None
 
 # If modifying these scopes, delete your previously saved credentials
 # at ~/.credentials/drive-python-quickstart.json
@@ -123,44 +123,47 @@ def insertFile(service, filename, title=None, description='', parent_id=[]):
         raise
         return None
 
+
 def download_file(service, file_id, local_fd):
-  """Download a Drive file's content to the local filesystem.
+    """Download a Drive file's content to the local filesystem.
 
-  Args:
-    service: Drive API Service instance.
-    file_id: ID of the Drive file that will downloaded.
-    local_fd: io.Base or file object, the stream that the Drive file's
-        contents will be written to.
-  """
-  request = service.files().get_media(fileId=file_id)
-  media_request = MediaIoBaseDownload(local_fd, request)
+    Args:
+      service: Drive API Service instance.
+      file_id: ID of the Drive file that will downloaded.
+      local_fd: io.Base or file object, the stream that the Drive file's
+          contents will be written to.
+    """
+    request = service.files().get_media(fileId=file_id)
+    media_request = MediaIoBaseDownload(local_fd, request)
 
-  while True:
-    try:
-      download_progress, done = media_request.next_chunk()
-    except errors.HttpError as error:
-      print('An error occurred: %s' % error)
-      return
-    if download_progress:
-      print('Download Progress: %d%%' % int(download_progress.progress() * 100))
-    if done:
-      print('Download Complete')
-      return
+    while True:
+        try:
+            download_progress, done = media_request.next_chunk()
+        except errors.HttpError as error:
+            print('An error occurred: %s' % error)
+            return
+        # if download_progress:
+        #     print('Download Progress: %d%%' % int(download_progress.progress() * 100))
+        if done:
+            print('Download Complete')
+            return
+
 
 def print_file_content(service, file_id):
-  """Print a file's content.
+    """Print a file's content.
 
-  Args:
-    service: Drive API service instance.
-    file_id: ID of the file.
+    Args:
+      service: Drive API service instance.
+      file_id: ID of the file.
 
-  Returns:
-    File's content if successful, None otherwise.
-  """
-  try:
-    print(service.files().get_media(fileId=file_id).execute())
-  except errors.HttpError as error:
-    print('An error occurred: %s' % error)
+    Returns:
+      File's content if successful, None otherwise.
+    """
+    try:
+        print(service.files().get_media(fileId=file_id).execute())
+    except errors.HttpError as error:
+        print('An error occurred: %s' % error)
+
 
 def getCredentials():
     """Gets valid user credentials from storage.
@@ -209,7 +212,7 @@ def uploadFileToDrive(filename, drive_filename=None, description='', parents=[],
     return metadata
 
 
-def downloadFile(file_id):
+def downloadFile(file_id):  # TODO: clean
     # file_id = '0BwwA4oUTeiV1UVNwOHItT0xfa2M'
     request = drive_service.files().get_media(fileId=file_id)
     fh = io.BytesIO()

@@ -30,7 +30,11 @@ def format_ip(addr):
            str(ord(addr[2])) + '.' + \
            str(ord(addr[3]))
 
+def getInterfacesList():
+    ifs = all_interfaces()
+    inter_list = []
+    for i in ifs:
+        inter_list.append((i[0], "%s" % format_ip(i[1])))
+    return inter_list
 
-ifs = all_interfaces()
-for i in ifs:
-    print "%12s   %s" % (i[0], format_ip(i[1]))
+print(getInterfacesList())

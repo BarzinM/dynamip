@@ -10,9 +10,12 @@ This is a tool that helps different devices to know each other's public IPs (sta
 Dynamip uses Google Drive API to communicate IP values between devices. User needs to authorize the tool to connect to Google Drive.
 
 ## As of Now
-You can use the file `syncIPfile.py` to try Dynamip so far:
+You can use the file `main.py` to try Dynamip so far:
 	
-	python3 syncIPfile.py
+	python3 main.py generate # to generate a sample data file
+    python3 main.py upload # to upload the device info to cloud
+    python3 main.py download # to download info of all devices
+    python3 main.py echo # to echo all the informations availble on the disk from last download
 
 ## TODO
 
