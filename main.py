@@ -1,4 +1,5 @@
-from driveapi import getFileIdFromName, getServiceInstant, FileOnDriveError, insertFile, download_file, updateFile, getCredentials
+import driveapi
+from driveapi import getFileIdFromName, getServiceInstant, FileOnDriveError, insertFile, download_file, getCredentials
 from interpret import getIP, writeIPToFile, readIPFromFile, getHostname, getLocalIP, IPBank, Device
 
 import argparse
@@ -7,9 +8,24 @@ from oauth2client import tools
 file_name = 'Dynamip'
 
 
-def echo():
+def echo(service=None):
     bank = IPBank()
-    bank.parseFile(file_name)
+    try:
+        bank.parseFile(file_name)
+    except FileNotFoundError:
+        print("File could not be located on the disk.")
+        try:
+            if service is None:
+                service = getServiceInstant()
+            getFileIdFromName(service, file_name)
+            response = input('Do you want to download it from Drive?[y/n]:')
+            if response in ['y', 'Y', 'yes']:
+                download()
+
+        except FileOnDriveError:
+            response = input('Do you want to generate a new file?[y/n]:')
+            if response in ['y', 'Y', 'yes']:
+                generate()
     print(bank)
 
 
@@ -18,7 +34,8 @@ def hostOnly(service=None):
 
     if service is None:
         service = getServiceInstant()
-    file_id = getFileIdFromName(service, file_name)
+    file_id = download(service)
+    # file_id = getFileIdFromName(service, file_name)
 
     bank = IPBank()
     bank.parseFile(file_name)
@@ -31,7 +48,7 @@ def hostOnly(service=None):
             bank.updateFile(this_device)
 
             print("Uploading the file to Google Drive ...")
-            updateFile(service, file_id, file_name)
+            driveapi.updateFile(service, file_id, file_name)
             print("%s has been uploaded." % file_name)
 
             saved_states = this_device
@@ -40,10 +57,13 @@ def hostOnly(service=None):
         this_device.fromDevice()
 
 
-def up():
+def up(service=None):
     from time import sleep
-    # service = getServiceInstant()
-    # download(service)
+
+    if service is None:
+        service = getServiceInstant()
+    file_id = getFileIdFromName(service, file_name)
+
     bank = IPBank()
     bank.parseFile(file_name)
     this_device = Device()
@@ -93,6 +113,7 @@ def download(service=None):
         with open(file_name, 'wb+') as file_handle:
             download_file(service, file_id, file_handle)
 
+        return file_id
     except FileOnDriveError as e:
         print("File could not be located on Google Drive:", e)
 
@@ -198,19 +219,22 @@ if __name__ == '__main__':
         "action", help='the Dynamic action to perform (e.g. `echo` or `somethingelse`.')
 
     args = parser.parse_args()
+    action = args.action
 
     if args.noauth_local_webserver:
         getCredentials(args)
-        
-    if args.action == "echo":
+
+    if action == "echo":
         echo()
-    elif args.action == "generate":
+    elif action == "generate":
         generate()
-    elif args.action == "download":
+    elif action == "download":
         download()
-    elif args.action == "up":
+    elif action == "up":
         up()
-    elif args.action == "host":
+    elif action == "host":
         hostOnly()
+    else:
+        print("Unknown command!")
     # download()
     # main()
