@@ -4,10 +4,9 @@ import driveapi
 from driveapi import getFileIdFromName, getServiceInstant, FileOnDriveError, insertFile, download_file, getCredentials
 from interpret import getIP, writeIPToFile, readIPFromFile, getHostname, getLocalIP, IPBank, Device
 from oauth2client import tools
-from lib.tool_box_dev_text import setupLogger
+from lib.tool_box_dev_text.dev_and_text_tools import setupLogger
 
 logger = setupLogger(True, 'dynamip_logger', True)
-
 
 file_name = 'Dynamip'
 
