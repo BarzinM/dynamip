@@ -1,4 +1,4 @@
-from driveapi import getFileIdFromName, getServiceInstant, FileOnDriveError, insertFile, download_file
+from driveapi import getFileIdFromName, getServiceInstant, FileOnDriveError, insertFile, download_file, updateFile
 from interpret import getIP, writeIPToFile, readIPFromFile, getHostname, getLocalIP, IPBank, Device
 
 import argparse
@@ -12,15 +12,44 @@ def echo():
     bank.parseFile(file_name)
     print(bank)
 
+def hostOnly(service=None):
+    from time import sleep
+    
+    if service is None:
+        service = getServiceInstant()
+    file_id = getFileIdFromName(service, file_name)
+
+    bank = IPBank()
+    bank.parseFile(file_name)
+    this_device = Device()
+    this_device.fromDevice()
+    saved_states = bank.savedStates(this_device)
+    while True:
+        
+        if this_device != saved_states:
+            bank.updateFile(this_device)
+
+            print("Uploading the file to Google Drive ...")
+            updateFile(service, file_id, file_name)
+            print("%s has been uploaded." % file_name)
+            
+            saved_states = this_device
+        
+        sleep(15)
+        this_device.fromDevice()
+
+
 
 def up():
     from time import sleep
-    service = getServiceInstant()
+    # service = getServiceInstant()
     # download(service)
     bank = IPBank()
     bank.parseFile(file_name)
     this_device = Device()
+    this_device.fromDevice()
     saved_states = bank.savedStates(this_device)
+    print("got this",saved_states)
     while True:
         # if file changed
         # download it
@@ -30,12 +59,13 @@ def up():
             bank.updateFile(this_device)
             print("Uploading the file to Google Drive ...")
 
-            file_metadata = insertFile(service, file_name)
-            file_id = file_metadata['id']
+            # file_metadata = insertFile(service, file_name)
+            # file_id = file_metadata['id']
 
-            print("%s has been uploaded with the id %s" % (file_name, file_id))
+            print("%s has been uploaded." % file_name)
+            bank.parseFile()
             saved_states = bank.savedStates(this_device)
-        sleep(30)
+        sleep(15)
 
 
 def askTunnel():
@@ -174,4 +204,6 @@ if __name__ == '__main__':
         download()
     elif args.action == "up":
         up()
+    elif args.action == "host":
+        hostOnly()
     # main()

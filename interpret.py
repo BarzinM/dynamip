@@ -14,12 +14,13 @@ class IPBank(object):
         self.bank = []
         self.file_name = None
 
-    def savedStates(self,device):
+    def savedStates(self, device):
         name = device.getName()
-        for device in self.bank:
-            if name==device.getName():
-                return device
-        raise DynamipError("Could not find information of the following device: %s"%device)
+        for saved_device in self.bank:
+            if name == saved_device.getName():
+                return saved_device
+        raise DynamipError(
+            "Could not find information of the following device: %s" % device)
 
     def parseDict(self, dictionary):
         list_devices = []
@@ -67,30 +68,33 @@ class IPBank(object):
         text = [str(device) for device in self.bank]
         return "\n-----\n".join(text)
 
+
 class interface(object):
     def __init__(self):
         self.ip = None
         self.ip_gateway = None
-        self.interface_type = None # `public`, `wlan`, or `eth`
+        self.interface_type = None  # `public`, `wlan`, or `eth`
         self.subnet_mask = None
         self.mac_address = None
         self.mac_address_gateway = None
         self.ssh_port = None
         self.tunneled = False
         self.tunnel_request_recieved = False
-        self.tunneled_to = {'ip':'0.0.0.0', 'port':22}
+        self.tunneled_to = {'ip': '0.0.0.0', 'port': 22}
 
-    def fromFile(self,file_name):
-        self.ssh_port = 22 # TODO: correct this to read from file
+    def fromFile(self, file_name):
+        self.ssh_port = 22  # TODO: correct this to read from file
+
 
 class Device(object):
 
     def __init__(self, name=None):
         self.name = name
         self.networks = []
+        self.ip_local = None
         self.ip_public = None
         self.port_forwarding = None
-        self.local_network = [{'type':None,'ip':None}]
+        self.local_network = [{'type': None, 'ip': None}]
         self.update_time = None
 
     def getName(self):
@@ -100,45 +104,78 @@ class Device(object):
         self.name = getHostname()
         self.ip_public = getIP()
         self.update_time = time()
-        self.port_forwarding = None # look this up from config file
+        self.up_loca = getLocalIP()
+        self.port_forwarding = None  # look this up from config file
 
     def lookup(self, key, dictionary):
+        # TODO: clean up this methods
+        return dictionary[key]
         try:
             return dictionary[key]
         except KeyError:
-            warnings.warn('Could not find the key `%s`. Returning `None`.' % key)
+            warnings.warn(
+                'Could not find the key `%s`. Returning `None`.' % key)
             return None
 
     def fromDict(self, dictionary):
         if self.name is None:
-            raise DynamipError("Device object needs a name associated with the device")
+            raise DynamipError(
+                "Device object needs a name associated with the device")
         if self.name in dictionary.keys():
-            warnings.warn("The dictionary provided to `Device.fromDict` seem to contain information of multiple devices!")
+            warnings.warn(
+                "The dictionary provided to `Device.fromDict` seem to contain information of multiple devices!")
             print("Narrowing the information to current device")
             dictionary = dictionary[self.name]
-
-        self.ip_public = self.lookup('ip_public', dictionary)
-        self.update_time = self.lookup('update_time', dictionary)
-        print(self,'had this error')
+        try:
+            self.ip_public = self.lookup('ip_public', dictionary)
+            self.update_time = self.lookup('update_time', dictionary)
+        except KeyError as e:
+            warnings.warn('%s is missing %s key.' % (self.name,e))
 
     def toDict(self):
         information = {}
-        information[self.name] = {"ip_public": self.ip_public, "update_time": self.update_time, "local_network": self.local_network}
+        information[self.name] = {"ip_public": self.ip_public,
+                                  "update_time": self.update_time, "local_network": self.local_network}
 
         return information
 
     def isComplete(self):
         if None in [self.name, self.ip_public, self.mtim]:
-            raise DynamipError("Device information is incomplete:%s" % str(self))
+            raise DynamipError(
+                "Device information is incomplete:%s" % str(self))
+
+    def __eq__(self, other):
+        equal = True
+        try:
+            equal &= self.name == other.name
+            equal &= self.ip_public == other.ip_public
+            equal &= self.ip_local == other.ip_local
+            return equal
+        except Exception as e:
+            print("Following error happened during comparing %s and %s: %s" %
+                  (e, self.name, other.name))
+            return False
+
+    def __neq__(self, other):
+        equal = True
+        try:
+            equal &= self.name == other.name
+            equal &= self.ip_public == other.ip_public
+            equal &= self.ip_local == other.ip_local
+            return not equal
+        except Exception as e:
+            print("Following error happened during comparing %s and %s: %s" %
+                  (e, self.name, other.name))
+            return True
 
     def __str__(self):
 
         text = ["Device name: %s" % self.name]
         if self.update_time is not None:
-            text.append("- Updated @ %s"%ctime(self.update_time))
-        text.append("- Public IP: %s"%self.ip_public)
-        text.append("- Local Networks: %s"%self.local_network)
-        
+            text.append("- Updated @ %s" % ctime(self.update_time))
+        text.append("- Public IP: %s" % self.ip_public)
+        text.append("- Local Networks: %s" % self.local_network)
+
         text = "\n".join(text)
         return text
 
