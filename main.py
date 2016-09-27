@@ -1,9 +1,13 @@
+import argparse
 import driveapi
+
 from driveapi import getFileIdFromName, getServiceInstant, FileOnDriveError, insertFile, download_file, getCredentials
 from interpret import getIP, writeIPToFile, readIPFromFile, getHostname, getLocalIP, IPBank, Device
-
-import argparse
 from oauth2client import tools
+from lib.tool_box_dev_text import setupLogger
+
+logger = setupLogger(True, 'dynamip_logger', True)
+
 
 file_name = 'Dynamip'
 
@@ -35,7 +39,6 @@ def hostOnly(service=None):
     if service is None:
         service = getServiceInstant()
     file_id = download(service)
-    # file_id = getFileIdFromName(service, file_name)
 
     bank = IPBank()
     bank.parseFile(file_name)
@@ -62,7 +65,7 @@ def up(service=None):
 
     if service is None:
         service = getServiceInstant()
-    file_id = getFileIdFromName(service, file_name)
+    file_id = download(service)
 
     bank = IPBank()
     bank.parseFile(file_name)
@@ -74,18 +77,16 @@ def up(service=None):
         # if file changed
         # download it
         # bank.parseFile()
-        this_device.fromDevice()
         if this_device != saved_states:
             bank.updateFile(this_device)
             print("Uploading the file to Google Drive ...")
-
-            # file_metadata = insertFile(service, file_name)
-            # file_id = file_metadata['id']
-
+            driveapi.updateFile(service, file_id, file_name)
             print("%s has been uploaded." % file_name)
-            bank.parseFile()
-            saved_states = bank.savedStates(this_device)
         sleep(15)
+        download(service)
+        this_device.fromDevice()
+        bank.parseFile()
+        saved_states = bank.savedStates(this_device)
 
 
 def askTunnel():
@@ -98,6 +99,7 @@ def upload(service=None):
 
     file_metadata = insertFile(service, file_name)
     file_id = file_metadata['id']
+    return file_id
 
 
 def download(service=None):
@@ -215,8 +217,10 @@ def main():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(parents=[tools.argparser])
+
+    actions = ["echo", "geenrate", "download", "up", "host", "test"]
     parser.add_argument(
-        "action", help='the Dynamic action to perform (e.g. `echo` or `somethingelse`.')
+        "action", help='the Dynamic action to perform.', choices=actions)
 
     args = parser.parse_args()
     action = args.action
@@ -234,7 +238,7 @@ if __name__ == '__main__':
         up()
     elif action == "host":
         hostOnly()
+    elif action == "test":
+        pass
     else:
         print("Unknown command!")
-    # download()
-    # main()
