@@ -1,18 +1,21 @@
 import httplib2
 import os
 
-from apiclient import discovery
+from googleapiclient import discovery
 import oauth2client
+from oauth2client import file as oafile
 from oauth2client import client
 from oauth2client import tools
-from apiclient import errors
-from apiclient.http import MediaFileUpload, MediaIoBaseDownload
+from googleapiclient import errors
+from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 
 # try:
 #     import argparse
 #     flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
 # except ImportError:
 #     flags = None
+
+# print("Flags",flags)
 
 # If modifying these scopes, delete your previously saved credentials
 # at ~/.credentials/drive-python-quickstart.json
@@ -165,7 +168,7 @@ def print_file_content(service, file_id):
         print('An error occurred: %s' % error)
 
 
-def getCredentials():
+def getCredentials(flags=None):
     """Gets valid user credentials from storage.
 
     If nothing has been stored, or if the stored credentials are invalid,
@@ -181,7 +184,7 @@ def getCredentials():
     credential_path = os.path.join(credential_dir,
                                    'drive-python-quickstart.json')
 
-    store = oauth2client.file.Storage(credential_path)
+    store = oafile.Storage(credential_path)
     credentials = store.get()
     if not credentials or credentials.invalid:
         try:
@@ -199,28 +202,6 @@ def getCredentials():
     return credentials
 
 
-def uploadFileToDrive(filename, drive_filename=None, description='', parents=[], save_metadata=False):
-    if drive_filename is None:
-        drive_filename = filename
-
-    credentials = getCredentials()
-    http = credentials.authorize(httplib2.Http())
-    service = discovery.build('drive', 'v2', http=http)
-    metadata = insertFile(service, filename, 'dynamip_title',
-                          'TEMP TEMP TEMP dynamic app info', [])
-    print('Metadata of', filename, ':\n', metadata)
-    return metadata
-
-
-def downloadFile(file_id):  # TODO: clean
-    # file_id = '0BwwA4oUTeiV1UVNwOHItT0xfa2M'
-    request = drive_service.files().get_media(fileId=file_id)
-    fh = io.BytesIO()
-    downloader = MediaIoBaseDownload(fh, request)
-    done = False
-    while done is False:
-        status, done = downloader.next_chunk()
-        print("Download %d%%." % int(status.progress() * 100))
 
 
 def printFilesList(service, number_of_results=10):
