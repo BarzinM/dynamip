@@ -6,12 +6,12 @@ from interpret import getIP, writeIPToFile, readIPFromFile, getHostname, getLoca
 from oauth2client import tools
 from lib.tool_box_dev_text.dev_and_text_tools import setupLogger
 
-logger = setupLogger(True, 'dynamip_logger', True)
+# logger = setupLogger(True, 'dynamip_logger', True)
 
 file_name = 'Dynamip'
 
 
-def echo(service=None):
+def echo(service=None, name=None):
     bank = IPBank()
     try:
         bank.parseFile(file_name)
@@ -29,7 +29,10 @@ def echo(service=None):
             response = input('Do you want to generate a new file?[y/n]:')
             if response in ['y', 'Y', 'yes']:
                 generate()
-    print(bank)
+    if name is None:
+        print(bank)
+    else:
+        print(bank.savedStates(name))
 
 
 def hostOnly(service=None):
@@ -214,30 +217,40 @@ def main():
         print("%s has been uploaded with the id %s" % (file_name, file_id))
 
 
+def ssh():
+    print('heeeeeeeeeeeeeey')
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(parents=[tools.argparser])
 
-    actions = ["echo", "geenrate", "download", "up", "host", "test"]
-    parser.add_argument(
-        "action", help='the Dynamic action to perform.', choices=actions)
+    subparsers = parser.add_subparsers(dest='cmd')
+
+    parse_ssh = subparsers.add_parser('ssh', description='ssh desc', help='ssh help')
+    parse_ssh.add_argument('name', type=str)
+    parse_ssh.add_argument('port', type=int)
+
+    parse_echo = subparsers.add_parser('echo', description='echo desc', help='echo help')
+    parse_echo.add_argument('name',nargs='?')
 
     args = parser.parse_args()
-    action = args.action
+    # print(args)
 
     if args.noauth_local_webserver:
         getCredentials(args)
 
-    if action == "echo":
-        echo()
-    elif action == "generate":
-        generate()
-    elif action == "download":
-        download()
-    elif action == "up":
+    if args.cmd == 'echo':
+        echo(name=args.name)
+    elif args.cmd == 'up':
         up()
-    elif action == "host":
+    elif args.cmd == 'host':
         hostOnly()
-    elif action == "test":
-        pass
+    elif args.cmd == 'ssh':
+        ssh()
+    elif args.cmd == 'download':
+        download()
+    elif args.cmd == 'generate':
+        generate()
+    elif args.cmd == 'upload':
+        upload()
     else:
-        print("Unknown command!")
+        print('Unknown command!')

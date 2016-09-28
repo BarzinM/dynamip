@@ -12,9 +12,10 @@ class IPBank(object):
         self.file_name = None
 
     def savedStates(self, device):
-        name = device.getName()
+        if type(device) is not str:
+            device = device.getName()
         for saved_device in self.bank:
-            if name == saved_device.getName():
+            if device == saved_device.getName():
                 return saved_device
         raise DynamipError(
             "Could not find information of the following device: %s" % device)
