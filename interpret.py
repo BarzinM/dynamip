@@ -1,5 +1,4 @@
 import json
-import urllib.request as urlreq
 import requests
 from time import sleep, time, ctime
 import sys

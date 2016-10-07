@@ -1,0 +1,7 @@
+set -e
+echo "Starting tmux ..."
+tmux new-session -d -s dynamip_session 'python3 main.py host'
+echo "Started."
+echo "Detaching ..."
+tmux detach -s dynamip_session
+echo "tmux session is running"

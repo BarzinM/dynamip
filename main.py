@@ -1,4 +1,4 @@
-from driveapi import getFileIdFromName, getServiceInstant, FileOnDriveError, insertFile, download_file, updateFile
+from driveapi import getFileIdFromName, getServiceInstant, FileOnDriveError, insertFile, download_file, updateFile, getCredentials
 from interpret import getIP, writeIPToFile, readIPFromFile, getHostname, getLocalIP, IPBank, Device
 
 import argparse
@@ -12,9 +12,10 @@ def echo():
     bank.parseFile(file_name)
     print(bank)
 
+
 def hostOnly(service=None):
     from time import sleep
-    
+
     if service is None:
         service = getServiceInstant()
     file_id = getFileIdFromName(service, file_name)
@@ -25,19 +26,18 @@ def hostOnly(service=None):
     this_device.fromDevice()
     saved_states = bank.savedStates(this_device)
     while True:
-        
+
         if this_device != saved_states:
             bank.updateFile(this_device)
 
             print("Uploading the file to Google Drive ...")
             updateFile(service, file_id, file_name)
             print("%s has been uploaded." % file_name)
-            
+
             saved_states = this_device
-        
+
         sleep(15)
         this_device.fromDevice()
-
 
 
 def up():
@@ -49,7 +49,7 @@ def up():
     this_device = Device()
     this_device.fromDevice()
     saved_states = bank.savedStates(this_device)
-    print("got this",saved_states)
+    print("got this", saved_states)
     while True:
         # if file changed
         # download it
@@ -79,6 +79,7 @@ def upload(service=None):
     file_metadata = insertFile(service, file_name)
     file_id = file_metadata['id']
 
+
 def download(service=None):
     if service is None:
         service = getServiceInstant()
@@ -99,7 +100,8 @@ def download(service=None):
 def generate():
     import os.path
     if os.path.isfile(file_name):
-        response = input('File already exist on the disk. Are you sure you want to overwrite?[y/n]:')
+        response = input(
+            'File already exist on the disk. Are you sure you want to overwrite?[y/n]:')
         if response not in ['y', 'yes', 'Y']:
             print("Aborted!")
             return
@@ -192,10 +194,14 @@ def main():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(parents=[tools.argparser])
-    parser.add_argument("action", help='the Dynamic action to perform (e.g. `echo` or `somethingelse`.')
+    parser.add_argument(
+        "action", help='the Dynamic action to perform (e.g. `echo` or `somethingelse`.')
 
     args = parser.parse_args()
 
+    if args.noauth_local_webserver:
+        getCredentials(args)
+        
     if args.action == "echo":
         echo()
     elif args.action == "generate":
@@ -206,4 +212,5 @@ if __name__ == '__main__':
         up()
     elif args.action == "host":
         hostOnly()
+    # download()
     # main()
