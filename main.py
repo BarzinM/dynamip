@@ -6,7 +6,6 @@ from interpret import getIP, writeIPToFile, readIPFromFile, getHostname, getLoca
 from oauth2client import tools
 from lib.tool_box_dev_text.dev_and_text_tools import setupLogger
 
-# logger = setupLogger(True, 'dynamip_logger', True)
 
 file_name = 'Dynamip'
 
@@ -222,6 +221,8 @@ def ssh():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(parents=[tools.argparser])
+    parser.add_argument('-l','--log',action='store_true',dest='l')
+    parser.add_argument('-v','--verbose',action='store_true',dest='v')
 
     subparsers = parser.add_subparsers(dest='cmd')
 
@@ -237,6 +238,12 @@ if __name__ == '__main__':
 
     if args.noauth_local_webserver:
         getCredentials(args)
+
+    if args.l is True:
+        logger = setupLogger(True, 'dynamip_logger', True)
+
+    verbose = args.v
+
 
     if args.cmd == 'echo':
         echo(name=args.name)
