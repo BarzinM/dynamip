@@ -67,7 +67,7 @@ class IPBank(object):
         return "\n-----\n".join(text)
 
 
-class interface(object):
+class NetworkInterface(object):
     def __init__(self):
         self.ip = None
         self.ip_gateway = None

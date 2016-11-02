@@ -1,8 +1,9 @@
+#!/usr/bin/python3
 import argparse
 import driveapi
 
 from driveapi import getFileIdFromName, getServiceInstant, FileOnDriveError, insertFile, download_file, getCredentials
-from interpret import getIP, writeIPToFile, readIPFromFile, getHostname, getLocalIP, IPBank, Device
+from interpret import getIP, writeIPToFile, readIPFromFile, getHostname, getLocalIP, IPBank, Device, getBashOutput
 from oauth2client import tools
 from lib.tool_box_dev_text.dev_and_text_tools import setupLogger
 
@@ -216,25 +217,43 @@ def main():
         print("%s has been uploaded with the id %s" % (file_name, file_id))
 
 
-def ssh():
-    print('heeeeeeeeeeeeeey')
+def ssh(name, port):
+    import os
+    bank = IPBank()
+    bank.parseFile(file_name)
+    dev = bank.savedStates(name)
+    ip = dev.ip_public
+    os.execvp('ssh', ['ssh', ip, '-l', name, '-p', str(port)])
+
+
+def ping(name):
+    import os
+    bank = IPBank()
+    bank.parseFile(file_name)
+    dev = bank.savedStates(name)
+    ip = dev.ip_public
+    os.execvp('ping', ['ping', ip])
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(parents=[tools.argparser])
-    parser.add_argument('-l','--log',action='store_true',dest='l')
-    parser.add_argument('-v','--verbose',action='store_true',dest='v')
+    parser.add_argument('-l', '--log', action='store_true', dest='l')
+    parser.add_argument('-v', '--verbose', action='store_true', dest='v')
 
     subparsers = parser.add_subparsers(dest='cmd')
 
     parse_ssh = subparsers.add_parser('ssh', description='ssh desc', help='ssh help')
     parse_ssh.add_argument('name', type=str)
-    parse_ssh.add_argument('port', type=int)
+    parse_ssh.add_argument('-p', '--port', type=int, default=22)
 
     parse_echo = subparsers.add_parser('echo', description='echo desc', help='echo help')
-    parse_echo.add_argument('name',nargs='?')
+    parse_echo.add_argument('name', nargs='?')
+
+    parse_ping = subparsers.add_parser('ping', description='ping desc', help='ping help')
+
+    parse_ping.add_argument('name', type=str)
 
     args = parser.parse_args()
-    # print(args)
 
     if args.noauth_local_webserver:
         getCredentials(args)
@@ -244,7 +263,6 @@ if __name__ == '__main__':
 
     verbose = args.v
 
-
     if args.cmd == 'echo':
         echo(name=args.name)
     elif args.cmd == 'up':
@@ -252,12 +270,14 @@ if __name__ == '__main__':
     elif args.cmd == 'host':
         hostOnly()
     elif args.cmd == 'ssh':
-        ssh()
+        ssh(args.name, args.port)
     elif args.cmd == 'download':
         download()
     elif args.cmd == 'generate':
         generate()
     elif args.cmd == 'upload':
         upload()
+    elif args.cmd == 'ping':
+        ping(args.name)
     else:
         print('Unknown command!')
