@@ -201,8 +201,36 @@ def getCredentials(flags=None):
         print('Storing credentials to ' + credential_path)
     return credentials
 
+# https://developers.google.com/drive/v2/reference/changes/list
+def retrieve_all_changes(service, start_change_id=None):
+  """Retrieve a list of Change resources.
 
+  Args:
+    service: Drive API service instance.
+    start_change_id: ID of the change to start retrieving subsequent changes
+                     from or None.
+  Returns:
+    List of Change resources.
+  """
+  result = []
+  page_token = None
+  while True:
+    try:
+      param = {}
+      if start_change_id:
+        param['startChangeId'] = start_change_id
+      if page_token:
+        param['pageToken'] = page_token
+      changes = service.changes().list(**param).execute()
 
+      result.extend(changes['items'])
+      page_token = changes.get('nextPageToken')
+      if not page_token:
+        break
+    except errors.HttpError as error:
+      print('An error occurred: %s' % error)
+      break
+  return result
 
 def printFilesList(service, number_of_results=10):
     results = service.files().list(maxResults=number_of_results).execute()
@@ -232,6 +260,7 @@ def main():
     Creates a Google Drive API service object and outputs the names and IDs
     for up to 10 files.
     """
+    pass
     # service = getServiceInstant()
     # # insertFile(service, 'dynamip.conf')
     # file_id = getFileIdFromName(service, 'dynamip.conf')

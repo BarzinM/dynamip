@@ -1,0 +1,3 @@
+[submodule "lib/tool_box_dev_text"]
+	path = lib/tool_box_dev_text
+	url = https://github.com/barzinm/tool-box-dev-text

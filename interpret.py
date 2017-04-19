@@ -4,8 +4,6 @@ from time import sleep, time, ctime
 import sys
 import subprocess
 import socket
-# from getAllNetworks import getInterfaceList
-import warnings
 
 def fuzzyLookup(key, word_list):
     from difflib import SequenceMatcher as sm
@@ -26,18 +24,19 @@ class IPBank(object):
         self.file_name = None
 
     def savedStates(self, device):
-        name = device.getName()
+        if type(device) is not str:
+            device = device.getName()
         for saved_device in self.bank:
-            if name == saved_device.getName():
+            if device == saved_device.getName():
                 return saved_device
         raise DynamipError(
             "Could not find information of the following device: %s" % device)
 
     def parseDict(self, dictionary):
         list_devices = []
-        for key in dictionary.keys():
-            device = Device(key)
-            device.fromDict(dictionary[key])
+        for name in dictionary.keys():
+            device = Device(name)
+            device.fromDict(dictionary[name])
             list_devices.append(device)
         self.bank = list_devices
 
@@ -80,7 +79,7 @@ class IPBank(object):
         return "\n-----\n".join(text)
 
 
-class interface(object):
+class NetworkInterface(object):
     def __init__(self):
         self.ip = None
         self.ip_gateway = None
@@ -120,11 +119,10 @@ class Device(object):
 
     def lookup(self, key, dictionary):
         # TODO: clean up this methods
-        return dictionary[key]
         try:
             return dictionary[key]
         except KeyError:
-            warnings.warn(
+            print(
                 'Could not find the key `%s`. Returning `None`.' % key)
             return None
 
@@ -133,15 +131,13 @@ class Device(object):
             raise DynamipError(
                 "Device object needs a name associated with the device")
         if self.name in dictionary.keys():
-            warnings.warn(
+            print(
                 "The dictionary provided to `Device.fromDict` seem to contain information of multiple devices!")
             print("Narrowing the information to current device")
             dictionary = dictionary[self.name]
-        try:
-            self.ip_public = self.lookup('ip_public', dictionary)
-            self.update_time = self.lookup('update_time', dictionary)
-        except KeyError as e:
-            warnings.warn('%s is missing %s key.' % (self.name,e))
+        self.ip_public = self.lookup('ip_public', dictionary)
+        self.update_time = self.lookup('update_time', dictionary)
+        
 
     def toDict(self):
         information = {}

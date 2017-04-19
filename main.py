@@ -1,16 +1,38 @@
-from driveapi import getFileIdFromName, getServiceInstant, FileOnDriveError, insertFile, download_file, updateFile, getCredentials
-from interpret import getIP, writeIPToFile, readIPFromFile, getHostname, getLocalIP, IPBank, Device
-
+#!/usr/bin/python3
 import argparse
+import driveapi
+
+from driveapi import getFileIdFromName, getServiceInstant, FileOnDriveError, insertFile, download_file, getCredentials
+from interpret import getIP, writeIPToFile, readIPFromFile, getHostname, getLocalIP, IPBank, Device, getBashOutput
 from oauth2client import tools
+from lib.tool_box_dev_text.dev_and_text_tools import setupLogger
+
 
 file_name = 'Dynamip'
 
 
-def echo():
+def echo(service=None, name=None):
     bank = IPBank()
-    bank.parseFile(file_name)
-    print(bank)
+    try:
+        bank.parseFile(file_name)
+    except FileNotFoundError:
+        print("File could not be located on the disk.")
+        try:
+            if service is None:
+                service = getServiceInstant()
+            getFileIdFromName(service, file_name)
+            response = input('Do you want to download it from Drive?[y/n]:')
+            if response in ['y', 'Y', 'yes']:
+                download()
+
+        except FileOnDriveError:
+            response = input('Do you want to generate a new file?[y/n]:')
+            if response in ['y', 'Y', 'yes']:
+                generate()
+    if name is None:
+        print(bank)
+    else:
+        print(bank.savedStates(name))
 
 
 def hostOnly(service=None):
@@ -18,7 +40,7 @@ def hostOnly(service=None):
 
     if service is None:
         service = getServiceInstant()
-    file_id = getFileIdFromName(service, file_name)
+    file_id = download(service)
 
     bank = IPBank()
     bank.parseFile(file_name)
@@ -31,7 +53,7 @@ def hostOnly(service=None):
             bank.updateFile(this_device)
 
             print("Uploading the file to Google Drive ...")
-            updateFile(service, file_id, file_name)
+            driveapi.updateFile(service, file_id, file_name)
             print("%s has been uploaded." % file_name)
 
             saved_states = this_device
@@ -40,10 +62,13 @@ def hostOnly(service=None):
         this_device.fromDevice()
 
 
-def up():
+def up(service=None):
     from time import sleep
-    # service = getServiceInstant()
-    # download(service)
+
+    if service is None:
+        service = getServiceInstant()
+    file_id = download(service)
+
     bank = IPBank()
     bank.parseFile(file_name)
     this_device = Device()
@@ -54,18 +79,16 @@ def up():
         # if file changed
         # download it
         # bank.parseFile()
-        this_device.fromDevice()
         if this_device != saved_states:
             bank.updateFile(this_device)
             print("Uploading the file to Google Drive ...")
-
-            # file_metadata = insertFile(service, file_name)
-            # file_id = file_metadata['id']
-
+            driveapi.updateFile(service, file_id, file_name)
             print("%s has been uploaded." % file_name)
-            bank.parseFile()
-            saved_states = bank.savedStates(this_device)
         sleep(15)
+        download(service)
+        this_device.fromDevice()
+        bank.parseFile()
+        saved_states = bank.savedStates(this_device)
 
 
 def askTunnel():
@@ -78,6 +101,7 @@ def upload(service=None):
 
     file_metadata = insertFile(service, file_name)
     file_id = file_metadata['id']
+    return file_id
 
 
 def download(service=None):
@@ -93,6 +117,7 @@ def download(service=None):
         with open(file_name, 'wb+') as file_handle:
             download_file(service, file_id, file_handle)
 
+        return file_id
     except FileOnDriveError as e:
         print("File could not be located on Google Drive:", e)
 
@@ -192,25 +217,67 @@ def main():
         print("%s has been uploaded with the id %s" % (file_name, file_id))
 
 
+def ssh(name, port):
+    import os
+    bank = IPBank()
+    bank.parseFile(file_name)
+    dev = bank.savedStates(name)
+    ip = dev.ip_public
+    os.execvp('ssh', ['ssh', ip, '-l', name, '-p', str(port)])
+
+
+def ping(name):
+    import os
+    bank = IPBank()
+    bank.parseFile(file_name)
+    dev = bank.savedStates(name)
+    ip = dev.ip_public
+    os.execvp('ping', ['ping', ip])
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(parents=[tools.argparser])
-    parser.add_argument(
-        "action", help='the Dynamic action to perform (e.g. `echo` or `somethingelse`.')
+    parser.add_argument('-l', '--log', action='store_true', dest='l')
+    parser.add_argument('-v', '--verbose', action='store_true', dest='v')
+
+    subparsers = parser.add_subparsers(dest='cmd')
+
+    parse_ssh = subparsers.add_parser('ssh', description='ssh desc', help='ssh help')
+    parse_ssh.add_argument('name', type=str)
+    parse_ssh.add_argument('-p', '--port', type=int, default=22)
+
+    parse_echo = subparsers.add_parser('echo', description='echo desc', help='echo help')
+    parse_echo.add_argument('name', nargs='?')
+
+    parse_ping = subparsers.add_parser('ping', description='ping desc', help='ping help')
+
+    parse_ping.add_argument('name', type=str)
 
     args = parser.parse_args()
 
     if args.noauth_local_webserver:
         getCredentials(args)
-        
-    if args.action == "echo":
-        echo()
-    elif args.action == "generate":
-        generate()
-    elif args.action == "download":
-        download()
-    elif args.action == "up":
+
+    if args.l is True:
+        logger = setupLogger(True, 'dynamip_logger', True)
+
+    verbose = args.v
+
+    if args.cmd == 'echo':
+        echo(name=args.name)
+    elif args.cmd == 'up':
         up()
-    elif args.action == "host":
+    elif args.cmd == 'host':
         hostOnly()
-    # download()
-    # main()
+    elif args.cmd == 'ssh':
+        ssh(args.name, args.port)
+    elif args.cmd == 'download':
+        download()
+    elif args.cmd == 'generate':
+        generate()
+    elif args.cmd == 'upload':
+        upload()
+    elif args.cmd == 'ping':
+        ping(args.name)
+    else:
+        print('Unknown command!')
