@@ -7,6 +7,18 @@ import socket
 # from getAllNetworks import getInterfaceList
 import warnings
 
+def fuzzyLookup(key, word_list):
+    from difflib import SequenceMatcher as sm
+    max_ratio = 0.
+    best_match = ""
+    for ind in range(len(word_list)):
+        ratio = sm(None,key,word_list[ind]).ratio()
+        if ratio>max_ratio:
+            max_ratio = ratio
+            best_match = word_list[ind]
+    return best_match
+
+
 
 class IPBank(object):
     def __init__(self):
@@ -286,7 +298,8 @@ def getChangedIP(minutes=15):
     return new_ip
 
 if __name__ == '__main__':
-    print(getHostname())
-    print(getSSID(), getLocalIP())
-    m = Device('qwer')
-    print(m)
+    # print(getHostname())
+    # print(getSSID(), getLocalIP())
+    # m = Device('qwer')
+    # print(m)
+    print(fuzzyLookup('methi',['something','nothing','somethingelse']))
